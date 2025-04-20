@@ -10,6 +10,6 @@ comms = []
 for nodes in data.values():
     comms.append((min(nodes), len(nodes), sum(nodes)))
 
-comms_10 = sorted(comms, key=lambda x: (-x[1], -x[0]))[:10]
+comms_10 = sorted(comms, key=lambda x: (-x[1], x[0]))[:10]
 for c in comms_10:
     print(c)
