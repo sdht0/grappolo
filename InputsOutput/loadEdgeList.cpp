@@ -174,7 +174,7 @@ void parse_UndirectedEdgeList(graph * G, char *fileName) {
     long nv1, nv2;
     while(!feof(file))
     {
-        fscanf(file, "%ld %ld", &nv1, &nv2);
+        fscanf(file, "%ld,%ld", &nv1, &nv2);
         //printf("%ld  %ld\n", nv1, nv2);
         if(nv1 > NV)
             NV = nv1;
@@ -201,7 +201,7 @@ void parse_UndirectedEdgeList(graph * G, char *fileName) {
     double Twt = 1;
     time1 = omp_get_wtime();
     for(long i=0; i<NE; i++) {
-        fscanf(file, "%ld %ld", &Si, &Ti);
+        fscanf(file, "%ld,%ld", &Si, &Ti);
         //printf("%ld  %ld\n", Si, Ti);
 #if defined(DEL_ZERO_BASED)
 #else
