@@ -1,9 +1,11 @@
 # Nitin A. Gawande, PNNL
 # Oct 19, 2018
 
+cmake_minimum_required( VERSION 3.15)
+
 PROJECT(GRAPPOLO C CXX)
 
-option( DEFINE_RUNONGPU "Use of GPU" ON)
+option( DEFINE_RUNONGPU "Use of GPU" OFF)
 IF( DEFINE_RUNONGPU )
      MESSAGE( "GPU code enabled with CUDA" )
      FIND_PACKAGE(CUDA) 
@@ -11,8 +13,6 @@ IF( DEFINE_RUNONGPU )
 ENDIF( DEFINE_RUNONGPU )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-cmake_minimum_required( VERSION 3.8 )
 
 # Include cmake modules
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" )
