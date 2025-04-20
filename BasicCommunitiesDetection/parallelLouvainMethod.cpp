@@ -256,7 +256,7 @@ reduction(+:e_xx) reduction(+:a2_x)
         totItr = (time2-time1) + (time4-time3);
         total += totItr;
 #ifdef PRINT_DETAILED_STATS_
-        printf("%d \t %g \t %g \t %lf \t %3.3lf \t %3.3lf  \t %3.3lf\n",numItrs, e_xx, a2_x, currMod, (time2-time1), (time4-time3), totItr );
+        printf("%d \t %lu \t %lu \t %lf\n",numItrs, (unsigned long)e_xx, (unsigned long)a2_x, currMod);
 #endif
 #ifdef PRINT_TERSE_STATS_
         printf("%d \t %lf \t %3.3lf  \t %3.3lf\n",numItrs, currMod, totItr, total);

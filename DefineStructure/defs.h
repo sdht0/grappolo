@@ -60,7 +60,7 @@
 #define MilanRealMax HUGE_VAL       // +INFINITY
 #define MilanRealMin -MilanRealMax  // -INFINITY
 
-// #define PRINT_DETAILED_STATS_
+#define PRINT_DETAILED_STATS_
 //#define PRINT_TERSE_STATS_
 
 typedef struct comm
