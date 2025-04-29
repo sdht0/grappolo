@@ -47,7 +47,7 @@ using namespace std;
 //Returns the number of unique clusters
 long renumberClustersContiguously(long *C, long size) {
 #ifdef PRINT_DETAILED_STATS_
-    printf("Within renumberClustersContiguously()\n");
+    // printf("Within renumberClustersContiguously()\n");
 #endif
     double time1 = omp_get_wtime();
     //Count the number of unique communities and internal edges
@@ -72,7 +72,7 @@ long renumberClustersContiguously(long *C, long size) {
     }//End of for(i)
     time1 = omp_get_wtime() - time1;
 #ifdef PRINT_DETAILED_STATS_
-    printf("Time to renumber clusters: %lf\n", time1);
+    // printf("Time to renumber clusters: %lf\n", time1);
 #endif
     
     return numUniqueClusters; //Return the number of unique cluster ids
@@ -83,7 +83,7 @@ long renumberClustersContiguously(long *C, long size) {
 double buildNextLevelGraphOpt(graph *Gin, graph *Gout, long *C, long numUniqueClusters, int nThreads) {
     
 #ifdef PRINT_DETAILED_STATS_
-    printf("Within buildNextLevelGraphOpt(): # of unique clusters= %ld\n",numUniqueClusters);
+    // printf("Within buildNextLevelGraphOpt(): # of unique clusters= %ld\n",numUniqueClusters);
 #endif
     if (nThreads < 1)
         omp_set_num_threads(1);
@@ -95,7 +95,7 @@ double buildNextLevelGraphOpt(graph *Gin, graph *Gout, long *C, long numUniqueCl
         nT = omp_get_num_threads();
     }
 #ifdef PRINT_DETAILED_STATS_
-    printf("Actual number of threads: %d (requested: %d)\n", nT, nThreads);
+    // printf("Actual number of threads: %d (requested: %d)\n", nT, nThreads);
 #endif
     long percentange = 80;
     double time1, time2, TotTime=0; //For timing purposes
@@ -138,7 +138,7 @@ double buildNextLevelGraphOpt(graph *Gin, graph *Gout, long *C, long numUniqueCl
     TotTime += (time2-time1);
     
 #ifdef PRINT_DETAILED_STATS_
-    printf("Time to initialize: %3.3lf\n", time2-time1);
+    // printf("Time to initialize: %3.3lf\n", time2-time1);
 #endif
     time1 = omp_get_wtime();
     
@@ -183,7 +183,7 @@ double buildNextLevelGraphOpt(graph *Gin, graph *Gout, long *C, long numUniqueCl
     //printf("These should match: %ld == %ld\n",(2*NE_out + NV_out), vtxPtrOut[NV_out]);
     
 #ifdef PRINT_DETAILED_STATS_
-    printf("Time to count edges: %3.3lf\n", time2-time1);
+    // printf("Time to count edges: %3.3lf\n", time2-time1);
 #endif
     assert(vtxPtrOut[NV_out] == (NE_out*2+NV_out)); //Sanity check
     time1 = omp_get_wtime();
@@ -224,8 +224,8 @@ double buildNextLevelGraphOpt(graph *Gin, graph *Gout, long *C, long numUniqueCl
     time2 = omp_get_wtime();
     TotTime += (time2-time1);
 #ifdef PRINT_DETAILED_STATS_
-    printf("Time to build the graph: %3.3lf\n", time2-time1);
-    printf("Total time: %3.3lf\n", TotTime);
+    // printf("Time to build the graph: %3.3lf\n", time2-time1);
+    // printf("Total time: %3.3lf\n", TotTime);
 #endif
 #ifdef PRINT_TERSE_STATS_
     printf("Total time to build next phase: %3.3lf\n", TotTime);

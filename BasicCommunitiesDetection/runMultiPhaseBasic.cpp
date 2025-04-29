@@ -25,7 +25,7 @@
 // this software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDINGs, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
 // FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
 // COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
@@ -38,6 +38,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 // ************************************************************************
+
+#include <algorithm>
+#include <vector>
 
 #include "defs.h"
 #include "basic_comm.h"
@@ -57,7 +60,10 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
     long NV = G->numVertices;
     double* vDegree = nullptr;
     Comm* cInfo = nullptr;
-    
+
+    vector<long> check;
+    numThreads = 1;
+
     /* Step 1: Find communities */
     double prevMod = -1;
     double currMod = -1;
@@ -71,18 +77,35 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
     for (long i=0; i<NV; i++) {
         C[i] = -1;
     }
-    
     while(1){
-        printf("===============================\n");
-        printf("Phase %ld\n", phase);
-        printf("===============================\n");
+        printf("Phase %ld\n", phase-1);
         prevMod = currMod;
-        
-        
+
+        if (phase > 1) {
+            printf("Graph:\n");
+            for (long nodeId = 0; nodeId < G->numVertices; nodeId++) {
+                printf(" %ld [", nodeId);
+                auto startCSROffset = G->edgeListPtrs[nodeId];
+                auto endCSROffset = G->edgeListPtrs[nodeId + 1];
+                vector<string> nbrs;
+                for (auto offset = startCSROffset; offset < endCSROffset; offset++) {
+                    auto nbrEntry = G->edgeList[offset];
+                    char buffer[100];
+                    snprintf(buffer, sizeof(buffer), "%.0lf:%ld,", nbrEntry.weight, nbrEntry.tail);
+                    nbrs.emplace_back(buffer);
+                }
+                std::sort(nbrs.begin(), nbrs.end());
+                for (auto& e: nbrs) {
+                    printf("%s,", e.c_str());
+                }
+                printf("]\n");
+            }
+        }
+
         if(basicOpt == 1){
             currMod = parallelLouvianMethodNoMap(G, C, numThreads, currMod, threshold, &tmpTime, &tmpItr);
         }else if(threadsOpt == 1){
-            currMod = parallelLouvianMethod(G, C, numThreads, currMod, threshold, &tmpTime, &tmpItr);
+            currMod = parallelLouvianMethod(G, C, numThreads, currMod, threshold, &tmpTime, &tmpItr, check);
 	    //currMod = parallelLouvianMethodApprox(G, C, numThreads, currMod, threshold, &tmpTime, &tmpItr);
         }else{
             currMod = parallelLouvianMethodScale(G, C, numThreads, currMod, threshold, &tmpTime, &tmpItr);
@@ -93,7 +116,7 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
         
         //Renumber the clusters contiguiously
         numClusters = renumberClustersContiguously(C, G->numVertices);
-        printf("Number of unique clusters: %ld\n", numClusters);
+        // printf("Number of unique clusters: %ld\n", numClusters);
         
         //printf("About to update C_orig\n");
         //Keep track of clusters in C_orig
@@ -101,17 +124,36 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
 #pragma omp parallel for
             for (long i=0; i<NV; i++) {
                 C_orig[i] = C[i]; //After the first phase
+                if (std::find(check.begin(), check.end(), i) != check.end()) {
+                    printf(" save: 0: %ld %ld\n", i, C_orig[i]);
+                }
             }
         } else {
 #pragma omp parallel for
             for (long i=0; i<NV; i++) {
                 assert(C_orig[i] < G->numVertices);
-                if (C_orig[i] >=0)
-                    C_orig[i] = C[C_orig[i]]; //Each cluster in a previous phase becomes a vertex
+                if (C_orig[i] >=0) {
+                    auto prev = C_orig[i];
+                    C_orig[i] = C[prev]; //Each cluster in a previous phase becomes a vertex
+                    if (std::find(check.begin(), check.end(), i) != check.end()) {
+                        printf(" save: %ld %ld %ld\n", i, prev, C_orig[i]);
+                    }
+                }
             }
         }
-        printf("Done updating C_orig\n");
-        
+        // printf("Done updating C_orig\n");
+
+        auto old = check;
+        check.clear();
+        printf("#c = %lu\n", numClusters);
+        for (auto i : old) {
+            printf("  rnc: %ld->%ld\n", i, C[i]);
+            if (C[i] == -1) {
+                continue;
+            }
+            check.push_back(C[i]);
+        }
+
         //Break if too many phases or iterations
         if((phase > 200)||(totItr > 100000)) {
             break;

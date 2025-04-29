@@ -1,6 +1,8 @@
 #ifndef __BASIC__COMM__
 #define __BASIC__COMM__
 
+#include <vector>
+
 // Define in louvainMultiPhaseRun.cpp
 void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
 			double threshold, double C_threshold, int numThreads, int threadsOpt);
@@ -20,6 +22,10 @@ void runMultiPhaseBasicApprox(graph *G, long *C_orig, int basicOpt, long minGrap
 // Define in parallelLouvianMethod.cpp
 double parallelLouvianMethod(graph *G, long *C, int nThreads, double Lower, 
 				double thresh, double *totTime, int *numItr);
+
+// Define in parallelLouvianMethod.cpp
+double parallelLouvianMethod(graph *G, long *C, int nThreads, double Lower,
+				double thresh, double *totTime, int *numItr, std::vector<long>& check);
 
 // Define in parallelLouvianMethodApprox.cpp
 double parallelLouvianMethodApprox(graph *G, long *C, int nThreads, double Lower, 

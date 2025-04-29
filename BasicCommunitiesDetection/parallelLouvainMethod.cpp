@@ -39,6 +39,8 @@
 //
 // ************************************************************************
 
+#include <algorithm>
+
 #include "defs.h"
 #include "utilityClusteringFunctions.h"
 #include "basic_comm.h"
@@ -61,11 +63,16 @@ static void print_err_message(int err)
 
 using namespace std;
 
-
 double parallelLouvianMethod(graph *G, long *C, int nThreads, double Lower,
                              double thresh, double *totTime, int *numItr) {
+    vector<long> check;
+    return parallelLouvianMethod(G, C, nThreads, Lower, thresh, totTime, numItr, check);
+}
+
+double parallelLouvianMethod(graph *G, long *C, int nThreads, double Lower,
+                             double thresh, double *totTime, int *numItr, vector<long>& check) {
 #ifdef PRINT_DETAILED_STATS_
-    printf("Within parallelLouvianMethod()\n");
+    // printf("Within parallelLouvianMethod()\n");
 #endif
     if (nThreads < 1)
         omp_set_num_threads(1);
@@ -77,7 +84,7 @@ double parallelLouvianMethod(graph *G, long *C, int nThreads, double Lower,
         nT = omp_get_num_threads();
     }
 #ifdef PRINT_DETAILED_STATS_
-    printf("Actual number of threads: %d (requested: %d)\n", nT, nThreads);
+    // printf("Actual number of threads: %d (requested: %d)\n", nT, nThreads);
 #endif
     
     
@@ -172,12 +179,12 @@ double parallelLouvianMethod(graph *G, long *C, int nThreads, double Lower,
     initCommAss(pastCommAss, currCommAss, NV);
     
     time2 = omp_get_wtime();
-    printf("Time to initialize: %3.3lf\n", time2-time1);
+    // printf("Time to initialize: %3.3lf\n", time2-time1);
     
 #ifdef PRINT_DETAILED_STATS_
-    printf("========================================================================================================\n");
-    printf("Itr      E_xx            A_x2           Curr-Mod         Time-1(s)       Time-2(s)        T/Itr(s)\n");
-    printf("========================================================================================================\n");
+    // printf("========================================================================================================\n");
+    // printf("Itr      E_xx            A_x2           Curr-Mod         Time-1(s)       Time-2(s)        T/Itr(s)\n");
+    // printf("========================================================================================================\n");
 #endif
 #ifdef PRINT_TERSE_STATS_
     printf("=====================================================\n");
@@ -219,7 +226,23 @@ double parallelLouvianMethod(graph *G, long *C, int nThreads, double Lower,
             } else {
                 targetCommAss[i] = -1;
             }
-            
+
+            if (std::find(check.begin(), check.end(), i) != check.end()) {
+                printf("  %lu %lu->%lu [", i, currCommAss[i], targetCommAss[i]);
+                for (auto j = adj1; j < adj2; j++) {
+                    printf("%ld:%ld,", vtxInd[j].tail, currCommAss[vtxInd[j].tail]);
+                }
+                printf("][");
+                std::vector<std::pair<long, long>> vec(clusterLocalMap.begin(), clusterLocalMap.end());
+                std::sort(vec.begin(), vec.end(), [](auto &a, auto &b) {
+                    return a.second < b.second;  // Ascending order
+                });
+                for (const auto &pair : vec) {
+                    printf("%ld:%ld:%.0lf,", pair.first, pair.second, Counter[pair.second]);
+                }
+                printf("]\n");
+            }
+
             //Update
             if(targetCommAss[i] != currCommAss[i]  && targetCommAss[i] != -1) {
 #pragma omp atomic update
@@ -256,7 +279,7 @@ reduction(+:e_xx) reduction(+:a2_x)
         totItr = (time2-time1) + (time4-time3);
         total += totItr;
 #ifdef PRINT_DETAILED_STATS_
-        printf("%d \t %lu \t %lu \t %lf\n",numItrs, (unsigned long)e_xx, (unsigned long)a2_x, currMod);
+        printf("%d \t %lu \t %lu \t %lf\n",numItrs-1, (unsigned long)e_xx, (unsigned long)a2_x, currMod);
 #endif
 #ifdef PRINT_TERSE_STATS_
         printf("%d \t %lf \t %3.3lf  \t %3.3lf\n",numItrs, currMod, totItr, total);
@@ -289,9 +312,9 @@ reduction(+:e_xx) reduction(+:a2_x)
     *numItr  = numItrs;
     
 #ifdef PRINT_DETAILED_STATS_
-    printf("========================================================================================================\n");
-    printf("Total time for %d iterations is: %lf\n",numItrs, total);
-    printf("========================================================================================================\n");
+    // printf("========================================================================================================\n");
+    // printf("Total time for %d iterations is: %lf\n",numItrs, total);
+    // printf("========================================================================================================\n");
 #endif
 #ifdef PRINT_TERSE_STATS_
     printf("========================================================================================================\n");
