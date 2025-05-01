@@ -172,7 +172,7 @@ double parallelLouvianMethod(graph *G, long *C, int nThreads, double Lower,
     initCommAss(pastCommAss, currCommAss, NV);
     
     time2 = omp_get_wtime();
-    printf("Time to initialize: %3.3lf\n", time2-time1);
+    // printf(" Initialized iter %d: %.3lf\n", time2-time1);
     
 #ifdef PRINT_DETAILED_STATS_
     printf("========================================================================================================\n");
@@ -239,6 +239,7 @@ double parallelLouvianMethod(graph *G, long *C, int nThreads, double Lower,
             Counter.clear();
         }//End of for(i)
         time2 = omp_get_wtime();
+        printf("  Ran iteration %d: %.3lf s\n", *numItr-1, (time2 - time1));
         
         time3 = omp_get_wtime();
         double e_xx = 0;
@@ -250,9 +251,11 @@ reduction(+:e_xx) reduction(+:a2_x)
             e_xx += clusterWeightInternal[i];
             a2_x += (cInfo[i].degree)*(cInfo[i].degree);
         }
-        time4 = omp_get_wtime();
-        
         currMod = (e_xx*(double)constantForSecondTerm) - (a2_x*(double)constantForSecondTerm*(double)constantForSecondTerm);
+
+        time4 = omp_get_wtime();
+        printf("    Computed modularity: %.3lf s\n", (time4 - time3));
+
         totItr = (time2-time1) + (time4-time3);
         total += totItr;
 #ifdef PRINT_DETAILED_STATS_
@@ -266,7 +269,8 @@ reduction(+:e_xx) reduction(+:a2_x)
         if((currMod - prevMod) < thresMod) {
             break;
         }
-        
+
+        double time5 = omp_get_wtime();
         //Else update information for the next iteration
         prevMod = currMod;
         if(prevMod < Lower)
@@ -276,6 +280,7 @@ reduction(+:e_xx) reduction(+:a2_x)
             cInfo[i].size += cUpdate[i].size;
             cInfo[i].degree += cUpdate[i].degree;
         }
+        printf("    Updated comminfo %.3lf s\n", (omp_get_wtime() - time5));
         
         //Do pointer swaps to reuse memory:
         long* tmp;

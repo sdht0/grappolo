@@ -73,9 +73,7 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
     }
     
     while(1){
-        printf("===============================\n");
-        printf("Phase %ld\n", phase);
-        printf("===============================\n");
+        printf("Phase %ld: %ld nodes\n", phase, G->numVertices);
         prevMod = currMod;
         
         
@@ -90,13 +88,15 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
         
         totTimeClustering += tmpTime;
         totItr += tmpItr;
-        
+
         //Renumber the clusters contiguiously
+        double time_r = omp_get_wtime();
         numClusters = renumberClustersContiguously(C, G->numVertices);
-        printf("Number of unique clusters: %ld\n", numClusters);
+        printf("Renumbered communities: %.3lf s\n", (omp_get_wtime() - time_r));
         
         //printf("About to update C_orig\n");
         //Keep track of clusters in C_orig
+        time_r = omp_get_wtime();
         if(phase == 1) {
 #pragma omp parallel for
             for (long i=0; i<NV; i++) {
@@ -110,16 +110,17 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
                     C_orig[i] = C[C_orig[i]]; //Each cluster in a previous phase becomes a vertex
             }
         }
-        printf("Done updating C_orig\n");
+        printf("Saved results: %.3lf s\n", (omp_get_wtime() - time_r));
         
         //Break if too many phases or iterations
-        if((phase > 200)||(totItr > 100000)) {
+        if((phase > 100)||(totItr > 100000)) {
             break;
         }
         
         //Check for modularity gain and build the graph for next phase
         //In case coloring is used, make sure the non-coloring routine is run at least once
         if( (currMod - prevMod) > threshold ) {
+            time_r = omp_get_wtime();
             Gnew = (graph *) malloc (sizeof(graph)); assert(Gnew != 0);
             tmpTime =  buildNextLevelGraphOpt(G, Gnew, C, numClusters, numThreads);
             totTimeBuildingPhase += tmpTime;
@@ -140,6 +141,7 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
                 C[i] = -1;
             }
             phase++; //Increment phase number
+            printf("Aggregated graph: %.3lf s\n", (omp_get_wtime() - time_r));
         }else {
             break; //Modularity gain is not enough. Exit.
         }
