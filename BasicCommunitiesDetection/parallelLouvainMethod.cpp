@@ -239,7 +239,7 @@ double parallelLouvianMethod(graph *G, long *C, int nThreads, double Lower,
             Counter.clear();
         }//End of for(i)
         time2 = omp_get_wtime();
-        printf("  Ran iteration %d: %.3lf s\n", *numItr-1, (time2 - time1));
+        printf("  Ran iteration %d: %.3lf s\n", numItrs-1, (time2 - time1));
         
         time3 = omp_get_wtime();
         double e_xx = 0;

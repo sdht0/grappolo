@@ -73,7 +73,7 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
     }
     
     while(1){
-        printf("Phase %ld: %ld nodes\n", phase, G->numVertices);
+        printf("Phase %ld: %ld nodes\n", phase-1, G->numVertices);
         prevMod = currMod;
         
         
