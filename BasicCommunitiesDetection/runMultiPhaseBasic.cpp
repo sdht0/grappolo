@@ -61,8 +61,7 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
     /* Step 1: Find communities */
     double prevMod = -1;
     double currMod = -1;
-    long phase = 1;
-    
+
     graph *Gnew; //To build new hierarchical graphs
     long numClusters;
     long *C = (long *) malloc (NV * sizeof(long));
@@ -71,12 +70,12 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
     for (long i=0; i<NV; i++) {
         C[i] = -1;
     }
-    
-    while(1){
-        printf("Phase %ld: %ld nodes\n", phase-1, G->numVertices);
+
+    for (long phase = 0u; phase < 20; ++phase) {
+        printf("Phase %ld: %ld nodes\n", phase, G->numVertices);
         prevMod = currMod;
-        
-        
+
+
         if(basicOpt == 1){
             currMod = parallelLouvianMethodNoMap(G, C, numThreads, currMod, threshold, &tmpTime, &tmpItr);
         }else if(threadsOpt == 1){
@@ -85,7 +84,7 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
         }else{
             currMod = parallelLouvianMethodScale(G, C, numThreads, currMod, threshold, &tmpTime, &tmpItr);
         }
-        
+
         totTimeClustering += tmpTime;
         totItr += tmpItr;
 
@@ -93,11 +92,11 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
         double time_r = omp_get_wtime();
         numClusters = renumberClustersContiguously(C, G->numVertices);
         printf("Renumbered communities: %.3lf s\n", (omp_get_wtime() - time_r));
-        
+
         //printf("About to update C_orig\n");
         //Keep track of clusters in C_orig
         time_r = omp_get_wtime();
-        if(phase == 1) {
+        if(phase == 0) {
 #pragma omp parallel for
             for (long i=0; i<NV; i++) {
                 C_orig[i] = C[i]; //After the first phase
@@ -111,12 +110,7 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
             }
         }
         printf("Saved results: %.3lf s\n", (omp_get_wtime() - time_r));
-        
-        //Break if too many phases or iterations
-        if((phase > 100)||(totItr > 100000)) {
-            break;
-        }
-        
+
         //Check for modularity gain and build the graph for next phase
         //In case coloring is used, make sure the non-coloring routine is run at least once
         if( (currMod - prevMod) > threshold ) {
@@ -131,29 +125,26 @@ void runMultiPhaseBasic(graph *G, long *C_orig, int basicOpt, long minGraphSize,
             G = Gnew; //Swap the pointers
             G->edgeListPtrs = Gnew->edgeListPtrs;
             G->edgeList = Gnew->edgeList;
-            
+
             //Free up the previous cluster & create new one of a different size
             free(C);
             C = (long *) malloc (numClusters * sizeof(long)); assert(C != 0);
-            
+
 #pragma omp parallel for
             for (long i=0; i<numClusters; i++) {
                 C[i] = -1;
             }
-            phase++; //Increment phase number
             printf("Aggregated graph: %.3lf s\n", (omp_get_wtime() - time_r));
         }else {
             break; //Modularity gain is not enough. Exit.
         }
-        
+
     } //End of while(1)
-    
+
     printf("********************************************\n");
     printf("*********    Compact Summary   *************\n");
     printf("********************************************\n");
     printf("Number of threads              : %ld\n", numThreads);
-    printf("Total number of phases         : %ld\n", phase);
-    printf("Total number of iterations     : %ld\n", totItr);
     printf("Final number of clusters       : %ld\n", numClusters);
     printf("Final modularity               : %lf\n", prevMod);
     printf("Total time for clustering      : %lf\n", totTimeClustering);
