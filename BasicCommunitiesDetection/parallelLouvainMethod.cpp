@@ -252,7 +252,7 @@ reduction(+:e_xx) reduction(+:a2_x)
         currMod = (e_xx*(double)constantForSecondTerm) - (a2_x*(double)constantForSecondTerm*(double)constantForSecondTerm);
 
         time4 = omp_get_wtime();
-        printf("    Computed modularity: %.3lf s\n", (time4 - time3));
+        printf("    Computed modularity: %lf %.3lf s\n", currMod, (time4 - time3));
 
         totItr = (time2-time1) + (time4-time3);
         total += totItr;

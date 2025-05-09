@@ -6,8 +6,8 @@ nodes = {}
 with open(sys.argv[2]) as f:
     for node, line in enumerate(f):
         parts = line.strip().split(',')
-        csv_id = int(parts[0])
-        internal_id = int(parts[1].split(':')[-1])
+        internal_id = int(parts[0].split(':')[-1])
+        csv_id = int(parts[1])
         nodes[internal_id] = csv_id
 
 with open(sys.argv[1]) as f:
